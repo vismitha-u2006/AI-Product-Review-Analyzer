@@ -45,8 +45,14 @@ export default function FakeDetectionPage() {
         reviewsApi.getReviews(pId),
         analysisApi.getAnalysisHistory(),
       ])
-      setReviews(revRes.data)
-      setAnalyses(histRes.data.filter((a) => a.product_id === pId))
+      const revData = Array.isArray(revRes?.data) ? revRes.data : []
+      const histData = Array.isArray(histRes?.data) ? histRes.data : []
+      setReviews(revData)
+      let prodAnalyses = histData.filter((a) => a && a.product_id === pId)
+      if (prodAnalyses.length === 0 && revData.length > 0) {
+        prodAnalyses = revData.map((r: any) => r.analysis).filter(Boolean)
+      }
+      setAnalyses(prodAnalyses)
     } catch (err) {
       console.error(err)
     } finally {
@@ -55,7 +61,7 @@ export default function FakeDetectionPage() {
   }
 
   const combined = reviews.map((r) => {
-    const a = analyses.find((an) => an.review_id === r.id)
+    const a = analyses.find((an) => an.review_id === r.id) || (r as any).analysis
     return { ...r, analysis: a }
   })
 

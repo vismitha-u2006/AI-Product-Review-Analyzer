@@ -234,6 +234,21 @@ function handleMockFallback(config: any): Promise<any> {
     return Promise.resolve({ data: mockCompareResult, status: 200 })
   }
 
+  // Analysis History & Pipeline
+  if (url.includes('/analysis/analysis-history')) {
+    const allAnalyses = clientReviews
+      .map((r) => r.analysis)
+      .filter((a): a is AnalysisResult => Boolean(a))
+    return Promise.resolve({ data: allAnalyses, status: 200 })
+  }
+
+  if (url.includes('/analysis/analyze')) {
+    const allAnalyses = clientReviews
+      .map((r) => r.analysis)
+      .filter((a): a is AnalysisResult => Boolean(a))
+    return Promise.resolve({ data: allAnalyses[0] || {}, status: 200 })
+  }
+
   // Seller Alerts
   if (url.includes('/alerts')) {
     return Promise.resolve({ data: clientAlerts, status: 200 })

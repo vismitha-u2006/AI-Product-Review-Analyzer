@@ -6,15 +6,25 @@ interface SentimentPieChartProps {
 }
 
 export default function SentimentPieChart({ data }: SentimentPieChartProps) {
+  const total = data.reduce((acc, curr) => acc + (curr.value || 0), 0)
+
+  if (total === 0) {
+    return (
+      <div className="h-full min-h-[200px] flex items-center justify-center text-xs text-slate-500">
+        No sentiment data available for this selection
+      </div>
+    )
+  }
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={data}
           cx="50%"
-          cy="50%"
-          innerRadius={70}
-          outerRadius={110}
+          cy="45%"
+          innerRadius={45}
+          outerRadius={75}
           paddingAngle={3}
           dataKey="value"
           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -30,6 +40,7 @@ export default function SentimentPieChart({ data }: SentimentPieChartProps) {
           itemStyle={{ color: '#94a3b8' }}
         />
         <Legend
+          verticalAlign="bottom"
           formatter={(val) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{val}</span>}
         />
       </PieChart>

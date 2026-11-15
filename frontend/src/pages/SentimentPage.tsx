@@ -61,8 +61,14 @@ export default function SentimentPage() {
         reviewsApi.getReviews(pId),
         analysisApi.getAnalysisHistory(),
       ])
-      setReviews(revRes.data)
-      setAnalyses(histRes.data.filter((a) => a.product_id === pId))
+      const revData = Array.isArray(revRes?.data) ? revRes.data : []
+      const histData = Array.isArray(histRes?.data) ? histRes.data : []
+      setReviews(revData)
+      let prodAnalyses = histData.filter((a) => a && a.product_id === pId)
+      if (prodAnalyses.length === 0 && revData.length > 0) {
+        prodAnalyses = revData.map((r: any) => r.analysis).filter(Boolean)
+      }
+      setAnalyses(prodAnalyses)
     } catch (err) {
       console.error(err)
     } finally {
@@ -72,7 +78,7 @@ export default function SentimentPage() {
 
   // Combine review with its analysis
   const combined = reviews.map((r) => {
-    const a = analyses.find((an) => an.review_id === r.id)
+    const a = analyses.find((an) => an.review_id === r.id) || (r as any).analysis
     return { ...r, analysis: a }
   })
 
@@ -89,7 +95,7 @@ export default function SentimentPage() {
   const posCount = analyses.filter((a) => a.sentiment === 'positive').length
   const negCount = analyses.filter((a) => a.sentiment === 'negative').length
   const neuCount = analyses.filter((a) => a.sentiment === 'neutral').length
-  const total = analyses.length || 1
+  const total = posCount + negCount + neuCount || 1
 
   const pieData = [
     { name: 'Positive', value: posCount, color: '#22c55e' },
@@ -155,9 +161,9 @@ export default function SentimentPage() {
         </div>
 
         {/* Sentiment Pie Chart */}
-        <div className="card lg:col-span-2">
+        <div className="card lg:col-span-2 flex flex-col justify-between">
           <h2 className="text-sm font-semibold text-slate-300 mb-2">Visual Breakdown</h2>
-          <div className="h-48">
+          <div className="h-64 min-h-[220px]">
             <SentimentPieChart data={pieData} />
           </div>
         </div>
