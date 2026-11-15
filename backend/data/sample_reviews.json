@@ -1,0 +1,166 @@
+[
+  {
+    "product_name": "Apex Smartphone Pro",
+    "description": "Flagship 5G smartphone with 120Hz AMOLED display, triple camera system, and all-day 5000mAh battery.",
+    "category": "Smartphones",
+    "reviews": [
+      {
+        "reviewer_id": "REV-101",
+        "rating": 5.0,
+        "review_date": "2026-11-01T10:00:00Z",
+        "text": "The camera quality on the Apex Smartphone Pro is absolutely mind-blowing! Low light photos look crisp and vibrant. The display is bright even under direct sunlight, and the battery life easily lasts two full days with heavy usage."
+      },
+      {
+        "reviewer_id": "REV-102",
+        "rating": 1.0,
+        "review_date": "2026-11-02T11:30:00Z",
+        "text": "Extremely disappointed with the battery performance. The battery drains quickly from 100% to 20% in less than 4 hours. It also overheats noticeably while charging. The customer support was unhelpful."
+      },
+      {
+        "reviewer_id": "REV-103",
+        "rating": 4.0,
+        "review_date": "2026-11-03T14:15:00Z",
+        "text": "Great overall performance and snappy software. The 120Hz display is super smooth. However, the price is slightly steep for what it offers, and the speaker sound quality is just average."
+      },
+      {
+        "reviewer_id": "REV-104",
+        "rating": 5.0,
+        "review_date": "2026-11-04T09:45:00Z",
+        "text": "BEST PRODUCT EVER 5 STARS BUY IT NOW HIGHLY RECOMMEND AMAZING PERFECT PRODUCT!!!!!",
+        "note": "Suspicious / excessive promotion"
+      },
+      {
+        "reviewer_id": "REV-105",
+        "rating": 5.0,
+        "review_date": "2026-11-05T16:20:00Z",
+        "text": "La cámara es fantástica y la pantalla tiene una calidad impresionante. La batería dura todo el día sin problemas. Muy satisfecho con la compra.",
+        "note": "Spanish review"
+      },
+      {
+        "reviewer_id": "REV-106",
+        "rating": 2.0,
+        "review_date": "2026-11-06T18:00:00Z",
+        "text": "The battery issue is real. Several users mentioned rapid battery drain, and mine does the same. Also the fingerprint sensor fails half the time."
+      },
+      {
+        "reviewer_id": "REV-107",
+        "rating": 4.0,
+        "review_date": "2026-11-07T13:10:00Z",
+        "text": "Solid build quality with premium aluminum edges. Fast charging works well, taking 35 minutes to full. Camera takes sharp portrait shots."
+      },
+      {
+        "reviewer_id": "REV-108",
+        "rating": 5.0,
+        "review_date": "2026-11-08T08:30:00Z",
+        "text": "Das Display ist brillant und die Kamera übertrifft alle Erwartungen. Ein erstklassiges Smartphone!",
+        "note": "German review"
+      },
+      {
+        "reviewer_id": "REV-109",
+        "rating": 3.0,
+        "review_date": "2026-11-09T15:40:00Z",
+        "text": "Decent phone overall. The screen and camera are good, but battery life is inconsistent after the latest software update."
+      },
+      {
+        "reviewer_id": "REV-110",
+        "rating": 1.0,
+        "review_date": "2026-11-10T19:25:00Z",
+        "text": "Defective unit received. Screen has green lines and battery dies within two hours. Demanding a full refund."
+      }
+    ]
+  },
+  {
+    "product_name": "SonicBoom Wireless Headphones",
+    "description": "Active Noise Cancelling over-ear wireless headphones with high-res audio and 40-hour battery life.",
+    "category": "Audio",
+    "reviews": [
+      {
+        "reviewer_id": "REV-201",
+        "rating": 5.0,
+        "review_date": "2026-11-01T12:00:00Z",
+        "text": "The active noise cancellation is superior to competitors. Deep punchy bass, clear mids, and the ear cushions are remarkably comfortable during 8-hour flights. Battery life easily exceeded 38 hours."
+      },
+      {
+        "reviewer_id": "REV-202",
+        "rating": 4.0,
+        "review_date": "2026-11-02T14:30:00Z",
+        "text": "Excellent sound quality and fast Bluetooth pairing. Microphone quality on Zoom calls is surprisingly clear. Slightly heavy after hours of continuous wear, but the battery longevity makes up for it."
+      },
+      {
+        "reviewer_id": "REV-203",
+        "rating": 2.0,
+        "review_date": "2026-11-03T17:15:00Z",
+        "text": "The build quality feels plasticky and fragile. The headband snapped after just two weeks of normal desk use. Sound was okay before it broke."
+      },
+      {
+        "reviewer_id": "REV-204",
+        "rating": 5.0,
+        "review_date": "2026-11-04T10:00:00Z",
+        "text": "Le son est exceptionnel, les basses sont profondes et l'autonomie de la batterie est incroyable. Meilleur casque sans fil!",
+        "note": "French review"
+      },
+      {
+        "reviewer_id": "REV-205",
+        "rating": 5.0,
+        "review_date": "2026-11-05T13:45:00Z",
+        "text": "Best headphones ever! 100% recommended! Perfect audio! Five stars all the way!",
+        "note": "Suspicious / short generic promotional"
+      },
+      {
+        "reviewer_id": "REV-206",
+        "rating": 4.0,
+        "review_date": "2026-11-06T11:20:00Z",
+        "text": "Very comfortable headband and the soundstage is wide. Noise cancellation blocks train noise completely. Great value for the price."
+      },
+      {
+        "reviewer_id": "REV-207",
+        "rating": 1.0,
+        "review_date": "2026-11-07T16:50:00Z",
+        "text": "Constant Bluetooth audio stuttering and disconnections when walking outdoors. Noise cancellation produces a weird buzzing hiss."
+      },
+      {
+        "reviewer_id": "REV-208",
+        "rating": 5.0,
+        "review_date": "2026-11-08T09:10:00Z",
+        "text": "Audiophile grade sound! The companion app EQ allows rich customization. Battery lasts forever."
+      }
+    ]
+  },
+  {
+    "product_name": "PulseFit Smartwatch X",
+    "description": "Rugged fitness smartwatch with heart rate monitoring, GPS tracking, sleep analytics, and water resistance.",
+    "category": "Wearables",
+    "reviews": [
+      {
+        "reviewer_id": "REV-301",
+        "rating": 4.0,
+        "review_date": "2026-11-01T08:00:00Z",
+        "text": "Accurate heart rate tracking during high-intensity workouts and GPS locks within 5 seconds. The AMOLED display is bright and easy to read outdoors."
+      },
+      {
+        "reviewer_id": "REV-302",
+        "rating": 2.0,
+        "review_date": "2026-11-02T10:30:00Z",
+        "text": "The companion smartphone app crashes constantly on sync. Sleep tracking statistics are completely inaccurate. Build quality is good, but software ruins the experience."
+      },
+      {
+        "reviewer_id": "REV-303",
+        "rating": 5.0,
+        "review_date": "2026-11-03T15:00:00Z",
+        "text": "Super water resistant - swam 20 laps with no issues. Step counter is spot-on and the battery lasts 6 full days between charges."
+      },
+      {
+        "reviewer_id": "REV-304",
+        "rating": 1.0,
+        "review_date": "2026-11-04T12:20:00Z",
+        "text": "App connection is terrible. Customer support refused to help. Heart rate monitor stopped working after one week."
+      },
+      {
+        "reviewer_id": "REV-305",
+        "rating": 4.0,
+        "review_date": "2026-11-05T14:40:00Z",
+        "text": "Great value for money. Battery life is stellar and notifications arrive instantly from phone."
+      }
+    ]
+  }
+]
