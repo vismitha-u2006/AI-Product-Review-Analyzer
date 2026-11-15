@@ -108,13 +108,24 @@ export default function AnalysisPage() {
     setSuccessMessage('')
 
     try {
+      let effectiveRating = singleRating
+      const lower = (translatedText || singleText).toLowerCase()
+      const strongNeg = [
+        'not good', 'no good', 'not great', 'not worth', 'not working', 'not recommend',
+        'bad', 'terrible', 'worst', 'awful', 'waste', 'poor', 'hate', 'defective',
+        'broken', 'disappointed', 'disappointing', 'drain', 'overheat', 'horrible', 'useless'
+      ]
+      if (strongNeg.some((w) => lower.includes(w)) && singleRating >= 4) {
+        effectiveRating = 1
+      }
+
       // 1. Submit review to backend
       const reviewRes = await reviewsApi.createReview({
         product_id: Number(selectedProductId),
         original_text: singleText,
         translated_text: translatedText || undefined,
         original_language: detectedLang || undefined,
-        rating: singleRating,
+        rating: effectiveRating,
         reviewer_id: singleReviewerId || undefined,
         source: 'manual',
       })
@@ -536,6 +547,7 @@ export default function AnalysisPage() {
                   </div>
                   <ConfidenceBar
                     confidence={quickResult.sentiment?.confidence || 0.5}
+                    sentiment={quickResult.sentiment?.sentiment as any}
                     label="Model Certainty (RoBERTa)"
                   />
                 </div>

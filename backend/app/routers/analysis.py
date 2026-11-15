@@ -69,7 +69,7 @@ def run_analysis(
         db.add(review)
 
         # 2. Sentiment
-        sentiment_result = analyze_sentiment(analysis_text)
+        sentiment_result = analyze_sentiment(analysis_text, rating=review.rating)
 
         # 3. Fake detection
         other_texts = [t for t in all_texts if t != review.original_text]

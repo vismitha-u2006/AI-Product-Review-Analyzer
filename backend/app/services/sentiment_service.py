@@ -1,13 +1,20 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..ml.inference import run_sentiment
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def analyze_sentiment(text: str) -> Dict[str, Any]:
+def analyze_sentiment(text: str, rating: Optional[float] = None) -> Dict[str, Any]:
     """Analyze sentiment of a single text."""
-    return run_sentiment(text)
+    res = run_sentiment(text)
+    if rating is not None:
+        if rating <= 2 and res.get("sentiment") != "negative":
+            res["sentiment"] = "negative"
+            res["label"] = "Negative"
+            res["score"] = 0.15
+            res["confidence"] = 0.95
+    return res
 
 
 def analyze_sentiment_batch(texts: List[str]) -> List[Dict[str, Any]]:

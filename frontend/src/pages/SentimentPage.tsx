@@ -283,6 +283,7 @@ export default function SentimentPage() {
                 <div className="pt-2 border-t border-slate-800">
                   <ConfidenceBar
                     confidence={item.analysis.sentiment_confidence}
+                    sentiment={item.analysis.sentiment}
                     label="RoBERTa Confidence Certainty"
                   />
                 </div>

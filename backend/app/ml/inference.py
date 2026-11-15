@@ -66,19 +66,39 @@ def run_sentiment(text: str) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"RoBERTa sentiment inference error: {e}")
 
-    # Robust fallback: rule-based sentiment
+    # Robust fallback: rule-based sentiment with negation handling
     text_lower = text.lower()
-    positive_words = ["good", "great", "excellent", "love", "amazing", "perfect", "best", "brilliant", "smooth", "crisp", "sharp", "stellar", "superior"]
-    negative_words = ["bad", "terrible", "awful", "hate", "poor", "worst", "horrible", "defect", "broken", "drain", "heat", "crash", "stutter", "die"]
-    pos = sum(1 for w in positive_words if w in text_lower)
-    neg = sum(1 for w in negative_words if w in text_lower)
+    negative_indicators = [
+        "not good", "no good", "not great", "not worth", "not working", "not recommend",
+        "dont recommend", "don't recommend", "did not like", "didn't like", "disappointed",
+        "disappointing", "worst", "terrible", "awful", "waste", "bad", "poor", "useless",
+        "cheap", "broken", "defective", "defect", "problem", "issues", "fails", "failed",
+        "failure", "drain", "drains", "overheat", "overheats", "stutter", "crash", "crashes",
+        "hate", "slow", "lag", "lags", "refund", "regret", "scam", "return", "damaged",
+        "horrible", "dies", "died"
+    ]
+    positive_indicators = [
+        "excellent", "amazing", "perfect", "awesome", "outstanding", "fantastic",
+        "love it", "loved", "great", "brilliant", "superb", "smooth", "crisp",
+        "stellar", "superior", "highly recommend", "best", "good"
+    ]
 
-    if pos > neg:
-        conf = min(0.95, 0.65 + (pos * 0.05))
-        return {"sentiment": "positive", "score": round(0.5 + (conf * 0.4), 4), "confidence": round(conf, 4), "label": "Positive"}
-    elif neg > pos:
-        conf = min(0.95, 0.65 + (neg * 0.05))
+    neg = sum(1 for w in negative_indicators if w in text_lower)
+    pos = sum(
+        1 for w in positive_indicators
+        if w in text_lower
+        and f"not {w}" not in text_lower
+        and f"don't {w}" not in text_lower
+        and f"didn't {w}" not in text_lower
+        and f"did not {w}" not in text_lower
+    )
+
+    if neg > pos:
+        conf = min(0.98, 0.75 + (neg * 0.05))
         return {"sentiment": "negative", "score": round(0.5 - (conf * 0.4), 4), "confidence": round(conf, 4), "label": "Negative"}
+    elif pos > neg:
+        conf = min(0.98, 0.75 + (pos * 0.05))
+        return {"sentiment": "positive", "score": round(0.5 + (conf * 0.4), 4), "confidence": round(conf, 4), "label": "Positive"}
     else:
         return {"sentiment": "neutral", "score": 0.5, "confidence": 0.60, "label": "Neutral"}
 

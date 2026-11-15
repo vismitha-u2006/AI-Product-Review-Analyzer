@@ -14,6 +14,85 @@ const apiBase = import.meta.env.VITE_API_URL
 
 const api = axios.create({ baseURL: apiBase })
 
+function classifySentiment(text: string, rating?: number): {
+  sentiment: 'positive' | 'negative' | 'neutral'
+  score: number
+  confidence: number
+  label: string
+} {
+  const t = (text || '').toLowerCase()
+
+  const negativeIndicators = [
+    'not good', 'no good', 'not great', 'not worth', 'not working', 'not recommend',
+    'dont recommend', "don't recommend", 'did not like', "didn't like", 'disappointed',
+    'disappointing', 'worst', 'terrible', 'awful', 'waste', 'bad', 'poor', 'useless',
+    'cheap', 'broken', 'defective', 'defect', 'problem', 'issues', 'fails', 'failed',
+    'failure', 'drain', 'drains', 'overheat', 'overheats', 'stutter', 'crash', 'crashes',
+    'hate', 'slow', 'lag', 'lags', 'refund', 'regret', 'scam', 'return', 'damaged',
+    'horrible', 'dies', 'died', 'unhelpful'
+  ]
+
+  const positiveIndicators = [
+    'excellent', 'amazing', 'perfect', 'awesome', 'outstanding', 'fantastic',
+    'love it', 'loved', 'great', 'brilliant', 'superb', 'smooth', 'crisp',
+    'stellar', 'superior', 'highly recommend', 'best', 'good', 'satisfied'
+  ]
+
+  let negCount = 0
+  for (const neg of negativeIndicators) {
+    if (t.includes(neg)) negCount++
+  }
+
+  let posCount = 0
+  for (const pos of positiveIndicators) {
+    if (
+      t.includes(pos) &&
+      !t.includes('not ' + pos) &&
+      !t.includes("don't " + pos) &&
+      !t.includes("didn't " + pos) &&
+      !t.includes("did not " + pos)
+    ) {
+      posCount++
+    }
+  }
+
+  // Strong negative textual indicators take highest priority
+  if (negCount > posCount) {
+    return {
+      sentiment: 'negative',
+      score: -0.88,
+      confidence: Math.min(0.98, 0.85 + negCount * 0.04),
+      label: 'Negative',
+    }
+  }
+
+  // Factor in customer star rating if provided
+  if (rating !== undefined && rating <= 2) {
+    return {
+      sentiment: 'negative',
+      score: -0.92,
+      confidence: 0.95,
+      label: 'Negative',
+    }
+  }
+
+  if (posCount > negCount || (rating !== undefined && rating >= 4)) {
+    return {
+      sentiment: 'positive',
+      score: 0.92,
+      confidence: Math.min(0.98, 0.85 + posCount * 0.04),
+      label: 'Positive',
+    }
+  }
+
+  return {
+    sentiment: 'neutral',
+    score: 0.0,
+    confidence: 0.70,
+    label: 'Neutral',
+  }
+}
+
 // Local mutable state for standalone preview mode
 const clientReviews = [...mockReviews]
 const clientProducts = [...mockProducts]
@@ -126,6 +205,8 @@ function handleMockFallback(config: any): Promise<any> {
     const text = body.original_text || ''
     const isSuspicious = text.toUpperCase() === text && text.length > 20
     const rating = Number(body.rating) || 5
+    const sentimentRes = classifySentiment(text, rating)
+
     const newRev = {
       id: clientReviews.length + 1,
       product_id: body.product_id || 1,
@@ -140,15 +221,15 @@ function handleMockFallback(config: any): Promise<any> {
         id: clientReviews.length + 1,
         review_id: clientReviews.length + 1,
         product_id: body.product_id || 1,
-        sentiment: (rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral') as any,
-        sentiment_score: rating >= 4 ? 0.92 : rating <= 2 ? -0.85 : 0.1,
-        sentiment_confidence: 0.95,
+        sentiment: sentimentRes.sentiment,
+        sentiment_score: sentimentRes.score,
+        sentiment_confidence: sentimentRes.confidence,
         is_suspicious: isSuspicious,
         fake_confidence: isSuspicious ? 0.85 : 0.05,
         fake_label: isSuspicious ? 'suspicious' : 'genuine',
         fake_reasons: isSuspicious ? ['Excessive promotional phrasing detected.'] : ['Natural human feedback pattern.'],
         aspect_results: [
-          { aspect: 'Quality', sentiment: rating >= 4 ? 'positive' : 'negative', confidence: 0.9 },
+          { aspect: 'Overall Experience', sentiment: sentimentRes.sentiment, confidence: sentimentRes.confidence },
         ],
         created_at: new Date().toISOString(),
       },
@@ -160,14 +241,9 @@ function handleMockFallback(config: any): Promise<any> {
   // AI Sentiment
   if (url.includes('/ai/sentiment')) {
     const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
-    const text = (body.text || '').toLowerCase()
-    const isPos = !text.includes('bad') && !text.includes('poor') && !text.includes('terrible') && !text.includes('drain')
+    const sentimentRes = classifySentiment(body.text, body.rating)
     return Promise.resolve({
-      data: {
-        sentiment: isPos ? 'positive' : 'negative',
-        score: isPos ? 0.92 : -0.88,
-        confidence: 0.95,
-      },
+      data: sentimentRes,
       status: 200,
     })
   }
