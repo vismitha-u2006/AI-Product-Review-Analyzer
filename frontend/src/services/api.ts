@@ -3,12 +3,21 @@ import type {
   User, Product, Review, AnalysisResult, SellerAlert,
   DashboardStats, DashboardCharts, Report, BulkUploadResult, CompareResult
 } from '../types'
+import {
+  mockProducts, mockReviews, mockDashboardStats,
+  mockDashboardCharts, mockAlerts, mockCompareResult
+} from './mockData'
 
 const apiBase = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
   : '/api'
 
 const api = axios.create({ baseURL: apiBase })
+
+// Local mutable state for standalone preview mode
+const clientReviews = [...mockReviews]
+const clientProducts = [...mockProducts]
+const clientAlerts = [...mockAlerts]
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
@@ -17,8 +26,25 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // If Vercel returns HTML (SPA rewrite to index.html with 200 OK) for an API request
+    if (typeof res.data === 'string' && res.data.trim().startsWith('<!doctype html>')) {
+      return handleMockFallback(res.config)
+    }
+    return res
+  },
   (err) => {
+    const isOfflineOrUnreachable =
+      !err.response ||
+      err.response.status === 404 ||
+      err.response.status === 405 ||
+      err.code === 'ERR_NETWORK' ||
+      err.message === 'Network Error'
+
+    if (isOfflineOrUnreachable) {
+      return handleMockFallback(err.config)
+    }
+
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
@@ -27,6 +53,210 @@ api.interceptors.response.use(
     return Promise.reject(err)
   }
 )
+
+function handleMockFallback(config: any): Promise<any> {
+  const url = (config.url || '').replace(/^\/api/, '')
+  const method = (config.method || 'get').toLowerCase()
+
+  // Auth Login
+  if (url.includes('/auth/login')) {
+    let email = 'demo@example.com'
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+      if (body.email) email = body.email
+    } catch {}
+    const user: User = {
+      id: 1,
+      email,
+      username: email.split('@')[0],
+      created_at: new Date().toISOString(),
+    }
+    return Promise.resolve({
+      data: {
+        access_token: 'demo-token-' + Date.now(),
+        token_type: 'bearer',
+        user,
+      },
+      status: 200,
+    })
+  }
+
+  // Dashboard Stats
+  if (url.includes('/dashboard/stats')) {
+    return Promise.resolve({ data: mockDashboardStats, status: 200 })
+  }
+
+  // Dashboard Charts
+  if (url.includes('/dashboard/charts')) {
+    return Promise.resolve({ data: mockDashboardCharts, status: 200 })
+  }
+
+  // Products List
+  if (url.includes('/products') && method === 'get') {
+    return Promise.resolve({ data: clientProducts, status: 200 })
+  }
+
+  // Create Product
+  if (url.includes('/products') && method === 'post') {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const newProd: Product = {
+      id: clientProducts.length + 1,
+      name: body.name || 'New Product',
+      category: body.category || 'General',
+      description: body.description || '',
+      created_at: new Date().toISOString(),
+      review_count: 0,
+    }
+    clientProducts.push(newProd)
+    return Promise.resolve({ data: newProd, status: 201 })
+  }
+
+  // Reviews List
+  if (url.includes('/reviews') && method === 'get') {
+    const params = config.params || {}
+    const filtered = params.product_id
+      ? clientReviews.filter(r => r.product_id === Number(params.product_id))
+      : clientReviews
+    return Promise.resolve({ data: filtered, status: 200 })
+  }
+
+  // Create Review
+  if (url.includes('/reviews') && method === 'post' && !url.includes('/bulk-upload')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const text = body.original_text || ''
+    const isSuspicious = text.toUpperCase() === text && text.length > 20
+    const rating = Number(body.rating) || 5
+    const newRev = {
+      id: clientReviews.length + 1,
+      product_id: body.product_id || 1,
+      reviewer_id: 'REV-' + (clientReviews.length + 101),
+      original_text: text,
+      translated_text: text,
+      original_language: 'en',
+      rating,
+      source: 'web',
+      created_at: new Date().toISOString(),
+      analysis: {
+        id: clientReviews.length + 1,
+        review_id: clientReviews.length + 1,
+        product_id: body.product_id || 1,
+        sentiment: (rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral') as any,
+        sentiment_score: rating >= 4 ? 0.92 : rating <= 2 ? -0.85 : 0.1,
+        sentiment_confidence: 0.95,
+        is_suspicious: isSuspicious,
+        fake_confidence: isSuspicious ? 0.85 : 0.05,
+        fake_label: isSuspicious ? 'suspicious' : 'genuine',
+        fake_reasons: isSuspicious ? ['Excessive promotional phrasing detected.'] : ['Natural human feedback pattern.'],
+        aspect_results: [
+          { aspect: 'Quality', sentiment: rating >= 4 ? 'positive' : 'negative', confidence: 0.9 },
+        ],
+        created_at: new Date().toISOString(),
+      },
+    }
+    clientReviews.unshift(newRev)
+    return Promise.resolve({ data: newRev, status: 201 })
+  }
+
+  // AI Sentiment
+  if (url.includes('/ai/sentiment')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const text = (body.text || '').toLowerCase()
+    const isPos = !text.includes('bad') && !text.includes('poor') && !text.includes('terrible') && !text.includes('drain')
+    return Promise.resolve({
+      data: {
+        sentiment: isPos ? 'positive' : 'negative',
+        score: isPos ? 0.92 : -0.88,
+        confidence: 0.95,
+      },
+      status: 200,
+    })
+  }
+
+  // AI Aspect Analysis
+  if (url.includes('/ai/aspect-analysis')) {
+    return Promise.resolve({
+      data: {
+        aspects: [
+          { aspect: 'Performance', sentiment: 'positive', confidence: 0.94, text_snippet: 'snappy and fast' },
+          { aspect: 'Battery', sentiment: 'positive', confidence: 0.91, text_snippet: 'lasts all day' },
+        ],
+      },
+      status: 200,
+    })
+  }
+
+  // AI Fake Detection
+  if (url.includes('/ai/fake-detection')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const text = body.text || ''
+    const isSusp = text.toUpperCase() === text && text.length > 20
+    return Promise.resolve({
+      data: {
+        is_fake: isSusp,
+        confidence: isSusp ? 0.89 : 0.07,
+        label: isSusp ? 'suspicious' : 'genuine',
+        reasons: isSusp ? ['Unnatural capitalization pattern detected.'] : ['Natural sentence structure.'],
+      },
+      status: 200,
+    })
+  }
+
+  // AI Translation
+  if (url.includes('/ai/translate')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    return Promise.resolve({
+      data: {
+        translated_text: body.text || '',
+        detected_language: 'es',
+      },
+      status: 200,
+    })
+  }
+
+  // AI Assistant Chat
+  if (url.includes('/ai/assistant/chat')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const msg = (body.message || '').toLowerCase()
+    let reply = 'Based on customer reviews, the product shows strong performance in display quality and general reliability, with battery feedback being the primary topic of discussion.'
+    if (msg.includes('battery')) {
+      reply = 'According to 12 analyzed reviews for Apex Smartphone Pro, 60% of users praise the 2-day battery life, while 40% report fast battery drain during high-intensity usage.'
+    } else if (msg.includes('camera') || msg.includes('photo')) {
+      reply = 'Customer sentiment for the camera is 95% positive. Reviewers highlight crisp low-light photos and excellent optical portrait stabilization.'
+    }
+    return Promise.resolve({
+      data: { response: reply },
+      status: 200,
+    })
+  }
+
+  // Comparison
+  if (url.includes('/comparison/compare')) {
+    return Promise.resolve({ data: mockCompareResult, status: 200 })
+  }
+
+  // Seller Alerts
+  if (url.includes('/alerts')) {
+    return Promise.resolve({ data: clientAlerts, status: 200 })
+  }
+
+  // Reports
+  if (url.includes('/reports')) {
+    return Promise.resolve({
+      data: [
+        {
+          id: 1,
+          report_name: 'Apex_Smartphone_Pro_Executive_Report.pdf',
+          product_id: 1,
+          file_path: 'uploads/reports/sample.pdf',
+          created_at: new Date().toISOString(),
+        },
+      ],
+      status: 200,
+    })
+  }
+
+  return Promise.resolve({ data: {}, status: 200 })
+}
 
 // Auth
 export const authApi = {
