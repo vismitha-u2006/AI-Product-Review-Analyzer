@@ -69,17 +69,25 @@ export default function AnalysisPage() {
   const [newProdName, setNewProdName] = useState('')
   const [newProdCategory, setNewProdCategory] = useState('')
   const [creatingProd, setCreatingProd] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     loadProducts()
   }, [])
 
+  useEffect(() => {
+    if (products.length > 0 && !selectedProductId) {
+      setSelectedProductId(products[0].id)
+    }
+  }, [products, selectedProductId])
+
   const loadProducts = async () => {
     try {
       const res = await productsApi.getProducts()
-      setProducts(res.data)
-      if (res.data.length > 0 && selectedProductId === '') {
-        setSelectedProductId(res.data[0].id)
+      const list = res.data || []
+      setProducts(list)
+      if (list.length > 0) {
+        setSelectedProductId((prev) => (prev ? prev : list[0].id))
       }
     } catch (err) {
       console.error('Failed to load products', err)
@@ -102,7 +110,20 @@ export default function AnalysisPage() {
 
   const handleSingleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!singleText.trim() || !selectedProductId) return
+    setFormError('')
+
+    if (!selectedProductId) {
+      setFormError('Please select or create a target product in the dropdown above before analyzing.')
+      return
+    }
+
+    if (!singleText.trim()) {
+      setFormError('Please enter review text in the box above before clicking Analyze Review Now.')
+      const el = document.getElementById('review-textarea')
+      if (el) el.focus()
+      return
+    }
+
     setAnalyzing(true)
     setQuickResult(null)
     setSuccessMessage('')
@@ -262,20 +283,50 @@ export default function AnalysisPage() {
             <select
               value={selectedProductId}
               onChange={(e) => {
-                setSelectedProductId(Number(e.target.value))
+                setSelectedProductId(e.target.value ? Number(e.target.value) : '')
                 setAiSummary(null)
+                if (formError) setFormError('')
               }}
               className="input"
             >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.category || 'General'})
-                </option>
-              ))}
+              {products.length === 0 ? (
+                <option value="">No products available — add one to begin</option>
+              ) : (
+                products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.category || 'General'})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {products.length === 0 && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setCreatingProd(true)
+                  try {
+                    const starter = await productsApi.createProduct({
+                      name: 'Apex Smartphone Pro',
+                      category: 'Electronics',
+                      description: 'Flagship smartphone with high-refresh display and AI camera',
+                    })
+                    setProducts([starter.data])
+                    setSelectedProductId(starter.data.id)
+                  } catch (err) {
+                    console.error('Failed to create starter product', err)
+                  } finally {
+                    setCreatingProd(false)
+                  }
+                }}
+                className="btn-primary flex items-center gap-1.5 text-xs"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Add Starter Product
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowNewProduct(!showNewProduct)}
@@ -434,17 +485,80 @@ export default function AnalysisPage() {
             <h2 className="text-lg font-semibold text-white">Enter Customer Review</h2>
             <form onSubmit={handleSingleAnalyze} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Review Text (English, Spanish, French, German, etc.)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="review-textarea" className="block text-xs font-medium text-slate-400">
+                    Review Text (English, Spanish, French, German, etc.)
+                  </label>
+                  {singleText.trim() && (
+                    <span className="text-xs text-slate-500 font-mono">
+                      {singleText.trim().length} chars
+                    </span>
+                  )}
+                </div>
                 <textarea
+                  id="review-textarea"
                   rows={4}
                   value={singleText}
-                  onChange={(e) => setSingleText(e.target.value)}
-                  placeholder="e.g. The camera quality is excellent, but the battery drains quickly..."
+                  onChange={(e) => {
+                    setSingleText(e.target.value)
+                    if (formError) setFormError('')
+                  }}
+                  placeholder="e.g. The battery is not good and drains rapidly. Terrible experience, do not buy..."
                   className="input resize-none"
-                  required
                 />
+              </div>
+
+              {/* Quick Fill Test Samples */}
+              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5 space-y-1.5">
+                <span className="text-xs text-slate-400 font-medium block">
+                  Quick Fill Test Samples (Click to load):
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSingleText('The battery is not good and drains rapidly. Terrible experience, do not buy.')
+                      setSingleRating(1)
+                      setFormError('')
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>⚡</span> Negative Review
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSingleText('Outstanding battery life, crystal-clear audio, and ultra-fast charging. Best purchase ever!')
+                      setSingleRating(5)
+                      setFormError('')
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>✨</span> Positive Review
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSingleText('El sonido es increíble y la batería dura todo el día. Muy recomendable!')
+                      setSingleRating(5)
+                      setFormError('')
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🌐</span> Spanish Review
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSingleText('BEST PRODUCT EVER 5 STARS BUY IT NOW HIGHLY RECOMMEND AMAZING PERFECT PRODUCT!!!!!')
+                      setSingleRating(5)
+                      setFormError('')
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🔍</span> Suspicious Review
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -498,10 +612,17 @@ export default function AnalysisPage() {
                 </div>
               </div>
 
+              {formError && (
+                <div className="flex items-center gap-2 p-3 bg-rose-500/15 border border-rose-500/40 rounded-lg text-rose-300 text-xs">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={analyzing || !singleText.trim() || !selectedProductId}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                disabled={analyzing}
+                className="btn-primary w-full flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99]"
               >
                 {analyzing ? (
                   <>

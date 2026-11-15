@@ -41,6 +41,19 @@ def list_products(
     current_user: User = Depends(get_current_user),
 ):
     products = db.query(Product).filter(Product.owner_id == current_user.id).all()
+    if not products:
+        # Auto-seed starter products for new accounts so analysis can begin immediately
+        default_prods = [
+            ("Apex Smartphone Pro", "Flagship smartphone with high-refresh display and AI camera", "Electronics"),
+            ("SonicBoom Wireless Headphones", "Over-ear noise cancelling wireless headphones", "Audio"),
+            ("PulseFit Smartwatch X", "Fitness tracking smartwatch with heart rate and sleep analytics", "Wearables"),
+        ]
+        for name, desc, cat in default_prods:
+            new_p = Product(name=name, description=desc, category=cat, owner_id=current_user.id)
+            db.add(new_p)
+        db.commit()
+        products = db.query(Product).filter(Product.owner_id == current_user.id).all()
+
     result = []
     for p in products:
         count = db.query(func.count(Review.id)).filter(Review.product_id == p.id).scalar()
