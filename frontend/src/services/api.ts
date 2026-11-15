@@ -4,7 +4,11 @@ import type {
   DashboardStats, DashboardCharts, Report, BulkUploadResult, CompareResult
 } from '../types'
 
-const api = axios.create({ baseURL: '/api' })
+const apiBase = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
+  : '/api'
+
+const api = axios.create({ baseURL: apiBase })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')

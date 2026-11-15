@@ -1,8 +1,10 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import os
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     SECRET_KEY: str = "dev-secret-key-change-in-production-123456789"
     DATABASE_URL: str = "sqlite:///./review_analyzer.db"
     GEMINI_API_KEY: str = ""
@@ -15,9 +17,5 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
 settings = Settings()

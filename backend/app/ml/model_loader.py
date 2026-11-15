@@ -10,7 +10,6 @@ class ModelLoader:
     _instance: Optional["ModelLoader"] = None
     _sentiment_pipeline = None
     _zero_shot_pipeline = None
-    _whisper_model = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -48,17 +47,6 @@ class ModelLoader:
                 self._zero_shot_pipeline = None
         return self._zero_shot_pipeline
 
-    def get_whisper_model(self):
-        if self._whisper_model is None:
-            try:
-                import whisper
-                logger.info("Loading Whisper tiny model...")
-                self._whisper_model = whisper.load_model("tiny")
-                logger.info("Whisper model loaded.")
-            except Exception as e:
-                logger.error(f"Failed to load Whisper model: {e}")
-                self._whisper_model = None
-        return self._whisper_model
 
 
 model_loader = ModelLoader()
