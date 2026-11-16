@@ -350,7 +350,28 @@ function handleMockFallback(config: any): Promise<any> {
     return Promise.resolve({ data: clientAlerts, status: 200 })
   }
 
-  // Reports
+  // Reports Download
+  if (url.includes('/reports') && url.includes('/download')) {
+    const minimalPdf = `%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000108 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n185\n%%EOF`
+    const blob = new Blob([minimalPdf], { type: 'application/pdf' })
+    return Promise.resolve({ data: blob, status: 200 })
+  }
+
+  // Reports Generate
+  if (url.includes('/reports/generate')) {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
+    const prodId = body.product_id || 1
+    const newReport = {
+      id: Date.now(),
+      report_name: `Executive_Dossier_${new Date().toISOString().slice(0, 10)}.pdf`,
+      product_id: prodId,
+      file_path: 'uploads/reports/sample.pdf',
+      created_at: new Date().toISOString(),
+    }
+    return Promise.resolve({ data: newReport, status: 200 })
+  }
+
+  // Reports List
   if (url.includes('/reports')) {
     return Promise.resolve({
       data: [

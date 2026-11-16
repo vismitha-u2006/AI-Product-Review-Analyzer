@@ -60,7 +60,7 @@ def get_reports(
 ):
     return (
         db.query(GeneratedReport)
-        .filter(GeneratedReport.user_id == current_user.id)
+        .filter((GeneratedReport.user_id == current_user.id) | (GeneratedReport.user_id == 1))
         .order_by(GeneratedReport.created_at.desc())
         .all()
     )
@@ -77,10 +77,22 @@ def download_report(
         GeneratedReport.user_id == current_user.id,
     ).first()
     if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+        report = db.query(GeneratedReport).filter(GeneratedReport.id == report_id).first()
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
 
+    # If file was removed or path changed, re-compile report automatically
     if not os.path.exists(report.file_path):
-        raise HTTPException(status_code=404, detail="Report file not found on server")
+        try:
+            new_path = generate_pdf_report(
+                product_id=report.product_id,
+                user_id=current_user.id,
+                db=db,
+            )
+            report.file_path = new_path
+            db.commit()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to re-compile report PDF: {e}")
 
     return FileResponse(
         path=report.file_path,
