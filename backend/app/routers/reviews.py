@@ -15,6 +15,7 @@ from ..database import get_db
 from ..models.models import User, Review, Product
 from ..schemas.schemas import ReviewCreate, ReviewResponse, BulkUploadResponse
 from ..utils.auth import get_current_user
+from ..services.translation_service import translate_to_english
 
 router = APIRouter(tags=["reviews"])
 
@@ -173,9 +174,22 @@ def create_review(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    trans_text = review_in.translated_text
+    orig_lang = review_in.original_language
+    if not trans_text or trans_text == review_in.original_text:
+        trans = translate_to_english(review_in.original_text)
+        if trans.get("was_translated"):
+            trans_text = trans["translated_text"]
+            orig_lang = trans["detected_language"]
+        else:
+            trans_text = review_in.original_text
+            orig_lang = trans.get("detected_language", "en")
+
     review = Review(
         product_id=review_in.product_id,
         original_text=review_in.original_text,
+        translated_text=trans_text,
+        original_language=orig_lang,
         rating=review_in.rating,
         review_date=review_in.review_date,
         reviewer_id=review_in.reviewer_id,
@@ -231,9 +245,14 @@ async def bulk_upload_reviews(
 
             for idx, item in enumerate(parsed_list):
                 try:
+                    trans = translate_to_english(item["text"])
+                    trans_text = trans["translated_text"] if trans.get("was_translated") else item["text"]
+                    orig_lang = trans.get("detected_language", "en")
                     review = Review(
                         product_id=target_product_id,
                         original_text=item["text"],
+                        translated_text=trans_text,
+                        original_language=orig_lang,
                         rating=item.get("rating"),
                         reviewer_id=item.get("reviewer_id") or f"NOTEPAD-{idx+1:03d}",
                         source="notepad_document",
@@ -260,9 +279,14 @@ async def bulk_upload_reviews(
 
             for idx, item in enumerate(parsed_list):
                 try:
+                    trans = translate_to_english(item["text"])
+                    trans_text = trans["translated_text"] if trans.get("was_translated") else item["text"]
+                    orig_lang = trans.get("detected_language", "en")
                     review = Review(
                         product_id=target_product_id,
                         original_text=item["text"],
+                        translated_text=trans_text,
+                        original_language=orig_lang,
                         rating=item.get("rating"),
                         reviewer_id=item.get("reviewer_id") or f"WORD-{idx+1:03d}",
                         source="word_document",
@@ -314,9 +338,15 @@ async def bulk_upload_reviews(
                         except Exception:
                             pass
 
+                trans = translate_to_english(text)
+                trans_text = trans["translated_text"] if trans.get("was_translated") else text
+                orig_lang = trans.get("detected_language", "en")
+
                 review = Review(
                     product_id=target_product_id,
                     original_text=text,
+                    translated_text=trans_text,
+                    original_language=orig_lang,
                     rating=rating,
                     reviewer_id=reviewer_id,
                     review_date=review_date,

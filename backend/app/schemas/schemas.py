@@ -49,6 +49,8 @@ class ProductResponse(BaseModel):
 class ReviewCreate(BaseModel):
     product_id: int
     original_text: str
+    translated_text: Optional[str] = None
+    original_language: Optional[str] = None
     rating: Optional[float] = None
     review_date: Optional[datetime] = None
     reviewer_id: Optional[str] = None

@@ -270,12 +270,22 @@ export default function SentimentPage() {
                 </div>
               </div>
 
-              <div>
-                <p className="text-sm text-slate-200">{item.original_text}</p>
-                {item.translated_text && (
-                  <p className="mt-1 text-xs text-cyan-300 italic">
-                    Translated: "{item.translated_text}"
-                  </p>
+              <div className="space-y-2">
+                {item.translated_text &&
+                item.translated_text.trim().toLowerCase() !== item.original_text.trim().toLowerCase() ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                        <span>🌐</span> English Translation ({item.original_language ? item.original_language.toUpperCase() : 'AUTO'} &rarr; EN)
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-white">{item.translated_text}</p>
+                    <p className="text-xs text-slate-400 italic bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                      Original ({item.original_language ? item.original_language.toUpperCase() : 'Non-English'}): "{item.original_text}"
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-200">{item.original_text}</p>
                 )}
               </div>
 

@@ -129,8 +129,35 @@ export default function AnalysisPage() {
     setSuccessMessage('')
 
     try {
+      // 1. Auto-detect & translate to English if in another language and not yet translated
+      let textForAnalysis = singleText
+      let activeTranslatedText = translatedText
+      let activeDetectedLang = detectedLang
+
+      if (!activeTranslatedText) {
+        try {
+          const transRes = await aiApi.translate(singleText)
+          if (
+            transRes.data &&
+            transRes.data.translated_text &&
+            transRes.data.detected_language !== 'en' &&
+            transRes.data.translated_text.trim().toLowerCase() !== singleText.trim().toLowerCase()
+          ) {
+            activeTranslatedText = transRes.data.translated_text
+            activeDetectedLang = transRes.data.detected_language
+            setTranslatedText(activeTranslatedText)
+            setDetectedLang(activeDetectedLang)
+            textForAnalysis = activeTranslatedText
+          }
+        } catch (tErr) {
+          console.warn('Auto translation notice:', tErr)
+        }
+      } else {
+        textForAnalysis = activeTranslatedText
+      }
+
       let effectiveRating = singleRating
-      const lower = (translatedText || singleText).toLowerCase()
+      const lower = textForAnalysis.toLowerCase()
       const strongNeg = [
         'not good', 'no good', 'not great', 'not worth', 'not working', 'not recommend',
         'bad', 'terrible', 'worst', 'awful', 'waste', 'poor', 'hate', 'defective',
@@ -140,22 +167,22 @@ export default function AnalysisPage() {
         effectiveRating = 1
       }
 
-      // 1. Submit review to backend
+      // 2. Submit review to backend with full translation metadata
       const reviewRes = await reviewsApi.createReview({
         product_id: Number(selectedProductId),
         original_text: singleText,
-        translated_text: translatedText || undefined,
-        original_language: detectedLang || undefined,
+        translated_text: activeTranslatedText || singleText,
+        original_language: activeDetectedLang || 'en',
         rating: effectiveRating,
         reviewer_id: singleReviewerId || undefined,
         source: 'manual',
       })
 
-      // 2. Run instant multi-model inference & persist analysis in DB
+      // 3. Run instant multi-model inference on English text & persist analysis in DB
       const [sentRes, fakeRes, aspectRes] = await Promise.all([
-        aiApi.analyzeSentiment(translatedText || singleText),
-        aiApi.detectFake(translatedText || singleText, Number(selectedProductId)),
-        aiApi.analyzeAspects(translatedText || singleText),
+        aiApi.analyzeSentiment(textForAnalysis),
+        aiApi.detectFake(textForAnalysis, Number(selectedProductId)),
+        aiApi.analyzeAspects(textForAnalysis),
         analysisApi.analyzeProduct(Number(selectedProductId), [reviewRes.data.id]),
       ])
 

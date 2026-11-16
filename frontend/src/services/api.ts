@@ -203,17 +203,19 @@ function handleMockFallback(config: any): Promise<any> {
   if (url.includes('/reviews') && method === 'post' && !url.includes('/bulk-upload')) {
     const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
     const text = body.original_text || ''
+    const transText = body.translated_text || text
+    const origLang = body.original_language || 'en'
     const isSuspicious = text.toUpperCase() === text && text.length > 20
     const rating = Number(body.rating) || 5
-    const sentimentRes = classifySentiment(text, rating)
+    const sentimentRes = classifySentiment(transText, rating)
 
     const newRev = {
       id: clientReviews.length + 1,
       product_id: body.product_id || 1,
       reviewer_id: 'REV-' + (clientReviews.length + 101),
       original_text: text,
-      translated_text: text,
-      original_language: 'en',
+      translated_text: transText,
+      original_language: origLang,
       rating,
       source: 'web',
       created_at: new Date().toISOString(),
@@ -280,13 +282,31 @@ function handleMockFallback(config: any): Promise<any> {
   // AI Translation
   if (url.includes('/ai/translate')) {
     const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : config.data || {}
-    return Promise.resolve({
-      data: {
-        translated_text: body.text || '',
-        detected_language: 'es',
-      },
-      status: 200,
-    })
+    const text = (body.text || '').trim()
+    return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const trans = (data[0] || []).map((x: any) => x[0]).join('')
+        const lang = data[2] || 'es'
+        return {
+          data: {
+            original_text: text,
+            translated_text: trans || text,
+            detected_language: lang,
+            confidence: 0.95,
+          },
+          status: 200,
+        }
+      })
+      .catch(() => ({
+        data: {
+          original_text: text,
+          translated_text: text,
+          detected_language: 'en',
+          confidence: 0.8,
+        },
+        status: 200,
+      }))
   }
 
   // AI Assistant Chat
